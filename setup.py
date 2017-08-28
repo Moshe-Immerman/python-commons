@@ -17,7 +17,7 @@ print find_packages()
 
 setup(name="mcommons",
     install_requires=requirements,
-    version= "0.1",
+    version= "0.2",
     description="Some common utility methods I use often",
     author="Moshe Immerman",
     author_email='name.surname@gmail.com',
