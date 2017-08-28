@@ -29,7 +29,8 @@ class Timer:
         return str(dt.datetime.now() - self.start)
 
 
-from colors import black, green, yellow, blue, magenta, cyan, white, color
+from colors import black, green, red, yellow, blue, magenta, cyan, white, color
+
 
 
 def format_bytes(mem):
@@ -47,7 +48,9 @@ def format_mem(mem):
 def format_space(space):
     if space is None:
         return ""
-    return str(space/1024/1024/1024) + "GB"
+    if space > 1024 * 1024 * 1024:
+        return '{0:.2f}GB'.format(float(space)/1024/1024/1024)
+    return '{0:.2f}MB'.format(float(space) / 1024 / 1024)
 
 
 def get_colored_percent(percentage, factor=1):
@@ -76,21 +79,36 @@ def red(msg):
     return color(msg, fg=196)
 
 
-def print_info(str):
-    sys.stderr.write(str + "\n")
+CROSS = red(u'\u2717')
+TICK = green(u'\u2714')
 
+def print_info(str):
+    sys.stderr.write(magenta(str))
+    return magenta(str)
+
+def print_msg(str):
+    sys.stderr.write(str)
+    return str
 
 def print_ok(str):
     sys.stderr.write(green(str))
-
+    return green(str)
 
 def print_fail(str):
-    sys.stderr.write(red(str))
+    sys.stderr.write(red(str.split("\n")[0]))
+    return red(str)
 
+
+def update_line(line):
+    ERASE_LINE = '\x1b[2K \r'
+    sys.stderr.write(ERASE_LINE + line + "\033[K")
+    sys.stderr.flush()
+    return line
 
 def ping(host, port):
     s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     try:
+        s.settimeout(2.0)
         s.connect((host, port))
         s.close()
         return True
@@ -164,39 +182,43 @@ def print_process(p, prefix=''):
 
 def print_response(r):
     if r.status_code >= 200 and r.status_code < 300:
-        print_ok(str(r.status_code) + "\n")
+        print_ok(str(r.status_code) + " ")
     else:
-        print_fail("[%s]\n %s\n" % (str(r.status_code), r.text))
+        print_fail("[%s] - %s " % (str(r.status_code), r.text))
 
 
-def http_post(url, data, headers={}, username=None, password=None, cookies=None):
+def http_post(url, data, headers={}, username=None, password=None, **kwargs):
     try:
-
         print_info(url + " ..  ")
         headers['User-Agent'] = 'Mozilla'
         r = requests.post(url, data=data, verify=False, auth=(
-            username, password), headers=headers, allow_redirects=False, cookies=cookies)
+            username, password), headers=headers, allow_redirects=False, **kwargs)
         if r.status_code > 300 and r.status_code < 400:
             print_ok(" -> " + r.headers['Location'] + "\n")
-            return http_post(r.headers['Location'], data=data, headers=headers, username=username, password=password, cookies=cookies)
+            return http_post(r.headers['Location'], data=data, headers=headers, username=username, password=password, **kwargs)
         print_response(r)
         return r
     except Exception, e:
         print_fail(str(e))
 
 
-def http_get(url, username=None, password=None, cookies=None):
+def http_get(url, username=None, password=None, cookies=None,**kwargs):
     try:
         print_info(url + " ..  ")
-        r = requests.get(url, verify=False, headers={"User-Agent": 'Mozilla'}, auth=(
-            username, password), cookies=cookies,  allow_redirects=False)
+        r = requests.get(url, verify=False,
+                         headers={"User-Agent": 'Mozilla', 'jsonErrors': 'true' },
+                         auth=(username, password),
+                         allow_redirects=False, **kwargs)
         if r.status_code > 300 and r.status_code < 400:
             print_ok(" -> " + r.headers['Location'] + "\n")
             return http_get(r.headers['Location'],  username, password, cookies)
         print_response(r)
-        return str(r.text)
+        return r
+    except requests.exceptions.ConnectionError:
+        print_fail(" connection refused \n")
     except Exception, e:
         print_fail(str(e))
+        return str(e)
 
 
 def execute(command, async=False):
