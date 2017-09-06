@@ -1,6 +1,5 @@
 from subprocess import *
 import subprocess
-import paramiko
 import socket
 import time
 import os
@@ -11,8 +10,6 @@ import sys
 import sh
 import requests
 from tempfile import mkstemp
-from requests.adapters import HTTPAdapter
-from requests.packages.urllib3.poolmanager import PoolManager
 from colorama import init
 init()  # make ansi terminal codes work on win32
 
@@ -30,8 +27,6 @@ class Timer:
 
 
 from colors import black, green, red, yellow, blue, magenta, cyan, white, color
-
-
 
 def format_bytes(mem):
     if mem is None:
@@ -202,16 +197,19 @@ def http_post(url, data, headers={}, username=None, password=None, **kwargs):
         print_fail(str(e))
 
 
-def http_get(url, username=None, password=None, cookies=None,**kwargs):
+def http_get(url, username=None, password=None, params=None, **kwargs):
     try:
         print_info(url + " ..  ")
-        r = requests.get(url, verify=False,
-                         headers={"User-Agent": 'Mozilla', 'jsonErrors': 'true' },
-                         auth=(username, password),
-                         allow_redirects=False, **kwargs)
+        r = requests.get(url, 
+                        verify=False,
+                        params=params,
+                        headers={"User-Agent": 'Mozilla', 'jsonErrors': 'true' },
+                        auth=(username, password),
+                        allow_redirects=False,
+                        **kwargs)
         if r.status_code > 300 and r.status_code < 400:
             print_ok(" -> " + r.headers['Location'] + "\n")
-            return http_get(r.headers['Location'],  username, password, cookies)
+            return http_get(r.headers['Location'],  username, password, params, **kwargs)
         print_response(r)
         return r
     except requests.exceptions.ConnectionError:
@@ -232,6 +230,7 @@ def execute(command, async=False):
 
 
 def execute_ssh(host, username, password, cmd):
+    import paramiko
     ssh = paramiko.SSHClient()
     ssh.load_system_host_keys()
     ssh.connect(host, username=username, password=password)
