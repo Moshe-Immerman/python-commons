@@ -10,6 +10,7 @@ ERASE_LINE = '\x1b[2K \r'
 def white(s):
     return s
 
+
 def orange(s):
     return color(s, fg=3)
 
@@ -24,6 +25,8 @@ def red(msg):
 CROSS = red(u'\u2717')
 TICK = green(u'\u2714')
 
+def update_title(title):
+    sys.stderr.write("\033]0;%s\007" % title)
 
 def move_cursor(x,y):
     return u"\u001b[%s;%sH" % (x,y)

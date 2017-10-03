@@ -18,8 +18,14 @@ def format_unit(amount, divisor, unit):
 
 
 def format_bytes(bytes):
+    try:
+        bytes = float(bytes)
+    except:
+        return bytes
+
     if bytes is None or bytes is 0:
         return ""
+
     if bytes >= TB:
         return format_unit(bytes, TB, 'TB')
     if bytes >= GB:
@@ -38,12 +44,12 @@ def format_num(space):
 
 
 def get_age_in_seconds(date):
+    import datetime as dt
     try:
         diff = pytz.utc.localize(dt.datetime.now()) - dateutil.parser.parse(date)
         return diff.days * 24 * 60 * 60 + diff.seconds
     except Exception, e:
-        print str(e)
-        return 0
+        return str(e)
 
 
 def format_seconds(seconds):
