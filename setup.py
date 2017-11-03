@@ -7,6 +7,7 @@ requirements = [
     'progressbar2',
     'termcolor',
     'colorama',
+    'pytz',
     'terminaltables'
 ]
 
@@ -17,7 +18,7 @@ if os.name == 'posix':
 
 setup(name="mcommons",
     install_requires=requirements,
-    version= "1.0",
+    version= "1.3",
     description="Some common utility methods I use often",
     author="Moshe Immerman",
     author_email='name.surname@gmail.com',

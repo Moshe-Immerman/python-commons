@@ -75,6 +75,9 @@ class Pretty(Table):
 
 
 class Simple(Table):
+    def humanize_bool(self, value):
+        return value
+
     def print_frame(self):
         sys.stdout.write(AsciiTable(self.rows).table)
 
